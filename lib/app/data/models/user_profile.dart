@@ -64,7 +64,14 @@ class UserProfile {
 
   bool get isComplete => name != null && name!.isNotEmpty;
 
-  UserProfile copyWith({String? name, String? email, String? profilePicturePath, String? referredByCode, int? isSynced, int? updatedAt}) {
+  UserProfile copyWith({
+    String? name,
+    String? email,
+    String? profilePicturePath,
+    String? referredByCode,
+    int? isSynced,
+    int? updatedAt,
+  }) {
     return UserProfile(
       id: id,
       name: name ?? this.name,

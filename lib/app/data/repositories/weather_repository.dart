@@ -8,16 +8,28 @@ class WeatherRepository {
   DateTime? _cacheTime;
   final Duration _cacheDuration = const Duration(minutes: 30);
 
-  Future<WeatherData?> getCurrentWeather(double latitude, double longitude) async {
+  Future<WeatherData?> getCurrentWeather(
+    double latitude,
+    double longitude,
+  ) async {
     // Check cache
-    if (_cachedWeather != null && _cacheTime != null && DateTime.now().difference(_cacheTime!) < _cacheDuration) {
+    if (_cachedWeather != null &&
+        _cacheTime != null &&
+        DateTime.now().difference(_cacheTime!) < _cacheDuration) {
       return _cachedWeather;
     }
 
     try {
-      final url = Uri.parse('$_baseUrl?latitude=$latitude&longitude=$longitude&current=temperature_2m,weather_code');
+      final url = Uri.parse(
+        '$_baseUrl?latitude=$latitude&longitude=$longitude&current=temperature_2m,weather_code',
+      );
 
-      final response = await http.get(url).timeout(const Duration(seconds: 10), onTimeout: () => throw Exception('Request timeout'));
+      final response = await http
+          .get(url)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw Exception('Request timeout'),
+          );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

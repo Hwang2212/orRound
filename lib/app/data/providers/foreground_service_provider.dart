@@ -19,7 +19,10 @@ class ForegroundServiceProvider {
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
       ),
-      iosNotificationOptions: const IOSNotificationOptions(showNotification: true, playSound: false),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: true,
+        playSound: false,
+      ),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.repeat(5000), // Every 5 seconds
         autoRunOnBoot: false,
@@ -32,7 +35,10 @@ class ForegroundServiceProvider {
 
   /// Start the foreground service.
   /// This will display a persistent notification and keep the app alive.
-  Future<void> startService({required String title, required String content}) async {
+  Future<void> startService({
+    required String title,
+    required String content,
+  }) async {
     // Check if the service is already running
     if (await FlutterForegroundTask.isRunningService) {
       return;
@@ -52,9 +58,15 @@ class ForegroundServiceProvider {
   }
 
   /// Update the foreground service notification content.
-  Future<void> updateNotification({required String title, required String content}) async {
+  Future<void> updateNotification({
+    required String title,
+    required String content,
+  }) async {
     if (await FlutterForegroundTask.isRunningService) {
-      FlutterForegroundTask.updateService(notificationTitle: title, notificationText: content);
+      FlutterForegroundTask.updateService(
+        notificationTitle: title,
+        notificationText: content,
+      );
     }
   }
 

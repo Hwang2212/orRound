@@ -3,14 +3,22 @@ class WeatherData {
   final String condition;
   final int weatherCode;
 
-  WeatherData({required this.temperature, required this.condition, required this.weatherCode});
+  WeatherData({
+    required this.temperature,
+    required this.condition,
+    required this.weatherCode,
+  });
 
   factory WeatherData.fromJson(Map<String, dynamic> json) {
     final current = json['current'] as Map<String, dynamic>;
     final temp = (current['temperature_2m'] as num).toDouble();
     final code = current['weather_code'] as int;
 
-    return WeatherData(temperature: temp, weatherCode: code, condition: _mapWeatherCode(code));
+    return WeatherData(
+      temperature: temp,
+      weatherCode: code,
+      condition: _mapWeatherCode(code),
+    );
   }
 
   static String _mapWeatherCode(int code) {

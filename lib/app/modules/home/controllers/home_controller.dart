@@ -59,7 +59,10 @@ class HomeController extends GetxController {
         await _analyticsRepo.setTotalJourneysCount(totalJourneysCount.value);
       }
     } catch (e) {
-      await _analyticsRepo.logDatabaseError(operationType: 'load_journeys', errorMessage: e.toString());
+      await _analyticsRepo.logDatabaseError(
+        operationType: 'load_journeys',
+        errorMessage: e.toString(),
+      );
       Get.snackbar('Error', 'Failed to load journeys');
     } finally {
       isLoadingJourneys.value = false;
@@ -70,17 +73,29 @@ class HomeController extends GetxController {
     isLoadingWeather.value = true;
     try {
       final location = await _locationProvider.getCurrentLocation();
-      if (location != null && location.latitude != null && location.longitude != null) {
-        final weather = await _weatherRepo.getCurrentWeather(location.latitude!, location.longitude!);
+      if (location != null &&
+          location.latitude != null &&
+          location.longitude != null) {
+        final weather = await _weatherRepo.getCurrentWeather(
+          location.latitude!,
+          location.longitude!,
+        );
 
         if (weather != null) {
           currentWeather.value = weather;
-          await _analyticsRepo.logWeatherFetched(temperature: weather.temperature, condition: weather.condition, fetchContext: 'home_page');
+          await _analyticsRepo.logWeatherFetched(
+            temperature: weather.temperature,
+            condition: weather.condition,
+            fetchContext: 'home_page',
+          );
         }
       }
     } catch (e) {
       print('Weather load error: $e');
-      await _analyticsRepo.logApiError(apiName: 'open_meteo', errorType: e.toString());
+      await _analyticsRepo.logApiError(
+        apiName: 'open_meteo',
+        errorType: e.toString(),
+      );
     } finally {
       isLoadingWeather.value = false;
     }
@@ -96,7 +111,10 @@ class HomeController extends GetxController {
   }
 
   void navigateToJourneyDetail(Journey journey) {
-    final ageDays = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(journey.startTime)).inDays;
+    final ageDays =
+        DateTime.now()
+            .difference(DateTime.fromMillisecondsSinceEpoch(journey.startTime))
+            .inDays;
 
     _analyticsRepo.logJourneyViewed(journeyAgeDays: ageDays);
     Get.toNamed(Routes.JOURNEY_DETAIL, arguments: journey.id);

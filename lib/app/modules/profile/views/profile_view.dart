@@ -9,7 +9,15 @@ class ProfileView extends GetView<ProfileController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile'), actions: [IconButton(icon: const Icon(Icons.edit), onPressed: controller.navigateToEditProfile)]),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: controller.navigateToEditProfile,
+          ),
+        ],
+      ),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -26,10 +34,19 @@ class ProfileView extends GetView<ProfileController> {
               const SizedBox(height: 16),
 
               // Name
-              Text(controller.displayName, style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                controller.displayName,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
 
               // Email
-              if (controller.hasEmail) ...[const SizedBox(height: 4), Text(controller.email, style: Theme.of(context).textTheme.bodyMedium)],
+              if (controller.hasEmail) ...[
+                const SizedBox(height: 4),
+                Text(
+                  controller.email,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
 
               const SizedBox(height: 32),
 
@@ -55,10 +72,20 @@ class ProfileView extends GetView<ProfileController> {
           CircleAvatar(
             radius: 60,
             backgroundColor: Theme.of(context).colorScheme.primary,
-            backgroundImage: controller.profilePicturePath != null ? FileImage(File(controller.profilePicturePath!)) : null,
+            backgroundImage:
+                controller.profilePicturePath != null
+                    ? FileImage(File(controller.profilePicturePath!))
+                    : null,
             child:
                 controller.profilePicturePath == null
-                    ? Text(controller.avatarLetter, style: TextStyle(fontSize: 48, color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold))
+                    ? Text(
+                      controller.avatarLetter,
+                      style: TextStyle(
+                        fontSize: 48,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
                     : null,
           ),
           Positioned(
@@ -66,8 +93,15 @@ class ProfileView extends GetView<ProfileController> {
             right: 0,
             child: Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle),
-              child: Icon(Icons.camera_alt, size: 20, color: Theme.of(context).colorScheme.onPrimaryContainer),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.camera_alt,
+                size: 20,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
             ),
           ),
         ],
@@ -82,13 +116,25 @@ class ProfileView extends GetView<ProfileController> {
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [_buildStatItem(context, icon: Icons.explore_outlined, label: 'Journeys', value: '${controller.totalJourneys}')],
+          children: [
+            _buildStatItem(
+              context,
+              icon: Icons.explore_outlined,
+              label: 'Journeys',
+              value: '${controller.totalJourneys}',
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(BuildContext context, {required IconData icon, required String label, required String value}) {
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.primary),

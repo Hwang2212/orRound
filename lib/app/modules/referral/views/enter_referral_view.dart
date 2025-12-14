@@ -14,25 +14,44 @@ class EnterReferralView extends GetView<ReferralController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person_add, size: 80, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.person_add,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
+            ),
 
             const SizedBox(height: 24),
 
-            Text('Have a referral code?', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+            Text(
+              'Have a referral code?',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
 
             const SizedBox(height: 8),
 
-            Text('Enter the code from a friend to get started with rewards', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              'Enter the code from a friend to get started with rewards',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
 
             const SizedBox(height: 32),
 
             TextField(
               controller: controller.enterCodeController,
-              decoration: const InputDecoration(labelText: 'Referral Code', hintText: 'Enter 6-character code', border: OutlineInputBorder(), counterText: ''),
+              decoration: const InputDecoration(
+                labelText: 'Referral Code',
+                hintText: 'Enter 6-character code',
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
               textAlign: TextAlign.center,
               textCapitalization: TextCapitalization.characters,
               maxLength: 6,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(letterSpacing: 8),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(letterSpacing: 8),
               onChanged: (_) => controller.clearError(),
             ),
 
@@ -44,7 +63,10 @@ class EnterReferralView extends GetView<ReferralController> {
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(controller.errorMessage.value, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                child: Text(
+                  controller.errorMessage.value,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               );
             }),
 
@@ -52,11 +74,23 @@ class EnterReferralView extends GetView<ReferralController> {
 
             Obx(() {
               return FilledButton(
-                onPressed: controller.isSubmitting.value ? null : controller.submitReferralCode,
-                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+                onPressed:
+                    controller.isSubmitting.value
+                        ? null
+                        : controller.submitReferralCode,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                ),
                 child:
                     controller.isSubmitting.value
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                         : const Text('Apply Code'),
               );
             }),

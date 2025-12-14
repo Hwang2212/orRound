@@ -11,11 +11,18 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Journey Tracking'),
-        leading: IconButton(icon: const Icon(Icons.close), onPressed: () => _showStopDialog(context)),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => _showStopDialog(context),
+        ),
         actions: [
           Obx(
             () => IconButton(
-              icon: Icon(controller.showMap.value ? Icons.visibility_off : Icons.visibility),
+              icon: Icon(
+                controller.showMap.value
+                    ? Icons.visibility_off
+                    : Icons.visibility,
+              ),
               tooltip: controller.showMap.value ? 'Hide map' : 'Show map',
               onPressed: controller.toggleMap,
             ),
@@ -26,10 +33,14 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
         () => Column(
           children: [
             // Map
-            if (controller.showMap.value) Expanded(flex: 2, child: const JourneyTrackingMapView()),
+            if (controller.showMap.value)
+              Expanded(flex: 2, child: const JourneyTrackingMapView()),
 
             // Stats
-            Expanded(flex: controller.showMap.value ? 1 : 3, child: _buildStats(context)),
+            Expanded(
+              flex: controller.showMap.value ? 1 : 3,
+              child: _buildStats(context),
+            ),
           ],
         ),
       ),
@@ -47,7 +58,10 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
             // Timer
             Text(
               controller.formattedDuration,
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(fontWeight: FontWeight.bold, fontFeatures: [const FontFeature.tabularFigures()]),
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontFeatures: [const FontFeature.tabularFigures()],
+              ),
             ),
             const SizedBox(height: 32),
 
@@ -55,15 +69,31 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildStatItem(context, icon: Icons.straighten, label: 'Distance', value: '${controller.distanceKm.value.toStringAsFixed(2)} km'),
-                _buildStatItem(context, icon: Icons.speed, label: 'Speed', value: '${controller.currentSpeedKmh.value.toStringAsFixed(1)} km/h'),
+                _buildStatItem(
+                  context,
+                  icon: Icons.straighten,
+                  label: 'Distance',
+                  value: '${controller.distanceKm.value.toStringAsFixed(2)} km',
+                ),
+                _buildStatItem(
+                  context,
+                  icon: Icons.speed,
+                  label: 'Speed',
+                  value:
+                      '${controller.currentSpeedKmh.value.toStringAsFixed(1)} km/h',
+                ),
               ],
             ),
 
             // Hint text when map is hidden
             if (!controller.showMap.value) ...[
               const SizedBox(height: 24),
-              Text('Route is being recorded', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.secondary)),
+              Text(
+                'Route is being recorded',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
             ],
           ],
         );
@@ -71,7 +101,12 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, {required IconData icon, required String label, required String value}) {
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Column(
       children: [
         Icon(icon, color: Theme.of(context).colorScheme.primary),
@@ -99,16 +134,23 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
                     onPressed: controller.startTracking,
                     icon: const Icon(Icons.play_arrow),
                     label: const Text('Start'),
-                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                   ),
                 ),
               ] else ...[
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: isPaused ? controller.resumeTracking : controller.pauseTracking,
+                    onPressed:
+                        isPaused
+                            ? controller.resumeTracking
+                            : controller.pauseTracking,
                     icon: Icon(isPaused ? Icons.play_arrow : Icons.pause),
                     label: Text(isPaused ? 'Resume' : 'Pause'),
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -117,7 +159,9 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
                     onPressed: () => _showStopDialog(context),
                     icon: const Icon(Icons.stop),
                     label: const Text('Stop'),
-                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                   ),
                 ),
               ],
@@ -137,7 +181,9 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
     Get.dialog(
       AlertDialog(
         title: const Text('Stop Journey?'),
-        content: const Text('Are you sure you want to stop tracking this journey?'),
+        content: const Text(
+          'Are you sure you want to stop tracking this journey?',
+        ),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           FilledButton(

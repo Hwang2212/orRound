@@ -62,6 +62,13 @@ class AnalyticsRepository {
     );
   }
 
+  Future<void> logJourneyTitleEdited({required String journeyId, required int titleLength, required bool isCleared}) async {
+    await _analytics?.logEvent(
+      name: 'journey_title_edited',
+      parameters: {'journey_id': journeyId, 'title_length': titleLength, 'is_cleared': isCleared ? 1 : 0},
+    );
+  }
+
   // Map events
   Future<void> logMapViewed({required String viewContext}) async {
     await _analytics?.logEvent(name: 'map_viewed', parameters: {'view_context': viewContext});

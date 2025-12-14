@@ -16,7 +16,11 @@ class EditProfileView extends GetView<EditProfileController> {
             // Name field
             TextField(
               controller: controller.nameController,
-              decoration: const InputDecoration(labelText: 'Name', hintText: 'Enter your name', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                hintText: 'Enter your name',
+                border: OutlineInputBorder(),
+              ),
               textCapitalization: TextCapitalization.words,
               onChanged: (_) => controller.clearError(),
             ),
@@ -26,7 +30,11 @@ class EditProfileView extends GetView<EditProfileController> {
             // Email field
             TextField(
               controller: controller.emailController,
-              decoration: const InputDecoration(labelText: 'Email (Optional)', hintText: 'Enter your email', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Email (Optional)',
+                hintText: 'Enter your email',
+                border: OutlineInputBorder(),
+              ),
               keyboardType: TextInputType.emailAddress,
               onChanged: (_) => controller.clearError(),
             ),
@@ -40,7 +48,10 @@ class EditProfileView extends GetView<EditProfileController> {
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(controller.errorMessage.value, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                child: Text(
+                  controller.errorMessage.value,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               );
             }),
 
@@ -49,8 +60,16 @@ class EditProfileView extends GetView<EditProfileController> {
             // Save button
             Obx(() {
               return FilledButton(
-                onPressed: controller.isSaving.value ? null : controller.saveProfile,
-                child: controller.isSaving.value ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save'),
+                onPressed:
+                    controller.isSaving.value ? null : controller.saveProfile,
+                child:
+                    controller.isSaving.value
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Text('Save'),
               );
             }),
           ],

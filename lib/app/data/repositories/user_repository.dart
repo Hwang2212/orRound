@@ -20,13 +20,22 @@ class UserRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final referralCode = _generateReferralCode();
 
-    final profile = UserProfile(name: name, referralCode: referralCode, createdAt: now, updatedAt: now);
+    final profile = UserProfile(
+      name: name,
+      referralCode: referralCode,
+      createdAt: now,
+      updatedAt: now,
+    );
 
     await db.insert('user_profile', profile.toMap());
     return profile;
   }
 
-  Future<UserProfile> updateUserProfile({String? name, String? email, String? profilePicturePath}) async {
+  Future<UserProfile> updateUserProfile({
+    String? name,
+    String? email,
+    String? profilePicturePath,
+  }) async {
     final db = await _dbProvider.database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -34,7 +43,8 @@ class UserRepository {
 
     if (name != null) updates['name'] = name;
     if (email != null) updates['email'] = email;
-    if (profilePicturePath != null) updates['profile_picture_path'] = profilePicturePath;
+    if (profilePicturePath != null)
+      updates['profile_picture_path'] = profilePicturePath;
 
     await db.update('user_profile', updates, where: 'id = 1');
 
@@ -45,10 +55,18 @@ class UserRepository {
     final db = await _dbProvider.database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    await db.update('user_profile', {'referred_by_code': code, 'updated_at': now, 'is_synced': 0}, where: 'id = 1');
+    await db.update('user_profile', {
+      'referred_by_code': code,
+      'updated_at': now,
+      'is_synced': 0,
+    }, where: 'id = 1');
 
     // Record the referral
-    await db.insert('referrals', {'id': _uuid.v4(), 'referral_code': code, 'used_at': now});
+    await db.insert('referrals', {
+      'id': _uuid.v4(),
+      'referral_code': code,
+      'used_at': now,
+    });
   }
 
   Future<String> getReferralCode() async {
@@ -64,6 +82,9 @@ class UserRepository {
   String _generateReferralCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
-    return List.generate(6, (index) => chars[random.nextInt(chars.length)]).join();
+    return List.generate(
+      6,
+      (index) => chars[random.nextInt(chars.length)],
+    ).join();
   }
 }

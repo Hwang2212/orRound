@@ -32,6 +32,9 @@ class JourneyDetailView extends GetView<JourneyDetailController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title section
+                _buildTitle(context),
+
                 // Map
                 _buildMap(context),
 
@@ -45,6 +48,75 @@ class JourneyDetailView extends GetView<JourneyDetailController> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    return Obx(
+      () => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _showEditTitleDialog(context),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.displayTitle,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      controller.startDateFormatted,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            IconButton(icon: const Icon(Icons.edit), onPressed: () => _showEditTitleDialog(context), tooltip: 'Edit title'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditTitleDialog(BuildContext context) {
+    final textController = TextEditingController(text: controller.displayTitle);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Edit Journey Title'),
+            content: TextField(
+              controller: textController,
+              decoration: const InputDecoration(hintText: 'Enter journey title', border: OutlineInputBorder()),
+              autofocus: true,
+              maxLines: 2,
+              maxLength: 100,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  controller.cancelEditingTitle();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  controller.saveTitle(textController.text);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
     );
   }
 

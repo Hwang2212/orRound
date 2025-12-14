@@ -19,7 +19,7 @@ class DatabaseProvider {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'orround.db');
 
-    return await openDatabase(path, version: 1, onCreate: _onCreate, onConfigure: _onConfigure);
+    return await openDatabase(path, version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade, onConfigure: _onConfigure);
   }
 
   Future<void> _onConfigure(Database db) async {
@@ -37,6 +37,7 @@ class DatabaseProvider {
         average_speed REAL DEFAULT 0,
         weather_condition TEXT,
         temperature REAL,
+        title TEXT,
         is_synced INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL
       )
@@ -84,6 +85,13 @@ class DatabaseProvider {
     await db.execute('CREATE INDEX idx_journey_id ON location_points(journey_id)');
     await db.execute('CREATE INDEX idx_timestamp ON location_points(timestamp)');
     await db.execute('CREATE INDEX idx_created_at ON journeys(created_at)');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add title column to journeys table
+      await db.execute('ALTER TABLE journeys ADD COLUMN title TEXT');
+    }
   }
 
   Future<void> close() async {

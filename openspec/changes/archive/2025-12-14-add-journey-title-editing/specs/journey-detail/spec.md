@@ -1,85 +1,6 @@
-# journey-detail Specification
+# journey-detail Spec Delta
 
-## Purpose
-TBD - created by archiving change add-journey-tracking-mvvm. Update Purpose after archive.
-## Requirements
-### Requirement: Comprehensive Journey Information Display
-
-The system SHALL display all journey details including statistics, weather, and route map.
-
-**Changes**: Title is now the primary identifier instead of date.
-
-#### Scenario: View Journey Details
-
-- **GIVEN** a journey has been completed
-- **WHEN** the user opens the journey detail page
-- **THEN** **the system displays the journey title prominently**
-- **AND** displays journey start date and time (secondary to title)
-- **AND** displays total elapsed time
-- **AND** displays total distance traveled
-- **AND** displays average speed
-- **AND** displays weather condition and temperature (if recorded)
-- **AND** all statistics are formatted with appropriate units
-
-### Requirement: Journey Route Map Display
-
-The system SHALL display the complete journey route on an interactive map.
-
-#### Scenario: View Journey Route
-
-- **GIVEN** the user is viewing journey details
-- **WHEN** the map section is displayed
-- **THEN** the system renders the complete route as a polyline on OpenStreetMap
-- **AND** displays start point marker
-- **AND** displays end point marker
-- **AND** automatically fits map bounds to show entire route
-- **AND** allows user to pan and zoom the map
-
-#### Scenario: View Journey with Few Points
-
-- **GIVEN** a journey has less than 10 recorded location points
-- **WHEN** viewing the journey map
-- **THEN** the system displays all points as markers
-- **AND** connects them with a polyline
-- **AND** shows a notice if data quality may be low
-
-### Requirement: Journey Sharing
-
-The system SHALL allow users to share journey details as a screenshot image.
-
-**Changes**: Shared screenshot now includes journey title.
-
-#### Scenario: Share Journey as Screenshot
-
-- **GIVEN** the user is viewing journey details
-- **WHEN** the user taps the "Share" button
-- **THEN** the system captures the detail view **(including title,** stats + map) as an image
-- **AND** saves the image to device gallery using gal package
-- **AND** opens system share sheet with the image attached
-- **AND** logs "journey_shared" analytics event with journey duration parameter
-
-### Requirement: Journey Detail Navigation
-
-The system SHALL provide navigation back to home page from journey details.
-
-#### Scenario: Return to Home
-
-- **GIVEN** the user is viewing journey details
-- **WHEN** the user taps the back button or swipes back
-- **THEN** the system navigates back to the home page
-- **AND** refreshes the journey list to reflect any changes
-
-### Requirement: Journey Metadata Display
-
-The system SHALL display formatted timestamps and human-readable journey information.
-
-#### Scenario: Format Journey Timestamps
-
-- **GIVEN** a journey was completed
-- **WHEN** viewing journey details
-- **THEN** start time is displayed as "MMM DD, YYYY at HH:MM AM/PM"
-- **AND** duration is displayed as "Xh YYm ZZs" or "YYm ZZs" for journeys under 1 hour
-- **AND** all times use user's local timezone
+## ADDED Requirements
 
 ### Requirement: Journey Title Display and Editing
 
@@ -155,3 +76,37 @@ The system SHALL display journey titles and allow users to edit them for complet
 - **AND** only the "Journey in Progress" or similar status is displayed
 - **AND** title editing becomes available after journey completion
 
+## MODIFIED Requirements
+
+### Requirement: Comprehensive Journey Information Display
+
+The system SHALL display all journey details including statistics, weather, and route map.
+
+**Changes**: Title is now the primary identifier instead of date.
+
+#### Scenario: View Journey Details
+
+- **GIVEN** a journey has been completed
+- **WHEN** the user opens the journey detail page
+- **THEN** **the system displays the journey title prominently**
+- **AND** displays journey start date and time (secondary to title)
+- **AND** displays total elapsed time
+- **AND** displays total distance traveled
+- **AND** displays average speed
+- **AND** displays weather condition and temperature (if recorded)
+- **AND** all statistics are formatted with appropriate units
+
+### Requirement: Journey Sharing
+
+The system SHALL allow users to share journey details as a screenshot image.
+
+**Changes**: Shared screenshot now includes journey title.
+
+#### Scenario: Share Journey as Screenshot
+
+- **GIVEN** the user is viewing journey details
+- **WHEN** the user taps the "Share" button
+- **THEN** the system captures the detail view **(including title,** stats + map) as an image
+- **AND** saves the image to device gallery using gal package
+- **AND** opens system share sheet with the image attached
+- **AND** logs "journey_shared" analytics event with journey duration parameter

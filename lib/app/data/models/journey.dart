@@ -6,6 +6,7 @@ class Journey {
   final double averageSpeed;
   final String? weatherCondition;
   final double? temperature;
+  final String? title;
   final int isSynced;
   final int createdAt;
 
@@ -17,6 +18,7 @@ class Journey {
     this.averageSpeed = 0,
     this.weatherCondition,
     this.temperature,
+    this.title,
     this.isSynced = 0,
     required this.createdAt,
   });
@@ -30,6 +32,7 @@ class Journey {
       'average_speed': averageSpeed,
       'weather_condition': weatherCondition,
       'temperature': temperature,
+      'title': title,
       'is_synced': isSynced,
       'created_at': createdAt,
     };
@@ -43,6 +46,7 @@ class Journey {
       totalDistance: (map['total_distance'] as num?)?.toDouble() ?? 0,
       averageSpeed: (map['average_speed'] as num?)?.toDouble() ?? 0,
       weatherCondition: map['weather_condition'] as String?,
+      title: map['title'] as String?,
       temperature: (map['temperature'] as num?)?.toDouble(),
       isSynced: map['is_synced'] as int? ?? 0,
       createdAt: map['created_at'] as int,

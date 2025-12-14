@@ -7,12 +7,14 @@ class LocationProvider {
 
   Future<bool> checkPermission() async {
     final permissionStatus = await _location.hasPermission();
-    return permissionStatus == loc.PermissionStatus.granted || permissionStatus == loc.PermissionStatus.grantedLimited;
+    return permissionStatus == loc.PermissionStatus.granted ||
+        permissionStatus == loc.PermissionStatus.grantedLimited;
   }
 
   Future<bool> requestPermission() async {
     final permissionStatus = await _location.requestPermission();
-    return permissionStatus == loc.PermissionStatus.granted || permissionStatus == loc.PermissionStatus.grantedLimited;
+    return permissionStatus == loc.PermissionStatus.granted ||
+        permissionStatus == loc.PermissionStatus.grantedLimited;
   }
 
   Future<bool> isServiceEnabled() async {
@@ -54,7 +56,11 @@ class LocationProvider {
     await _location.enableBackgroundMode(enable: enable);
   }
 
-  Future<void> changeSettings({loc.LocationAccuracy? accuracy, int? interval, double? distanceFilter}) async {
+  Future<void> changeSettings({
+    loc.LocationAccuracy? accuracy,
+    int? interval,
+    double? distanceFilter,
+  }) async {
     await _location.changeSettings(
       accuracy: accuracy ?? loc.LocationAccuracy.high,
       interval: interval ?? 5000, // 5 seconds
@@ -62,13 +68,21 @@ class LocationProvider {
     );
   }
 
-  Future<String?> getAddressFromLatLng(double latitude, double longitude) async {
+  Future<String?> getAddressFromLatLng(
+    double latitude,
+    double longitude,
+  ) async {
     try {
       final placemarks = await placemarkFromCoordinates(latitude, longitude);
       if (placemarks.isEmpty) return null;
 
       final place = placemarks.first;
-      final components = [place.name, place.locality, place.administrativeArea, place.country].where((e) => e != null && e.isNotEmpty);
+      final components = [
+        place.name,
+        place.locality,
+        place.administrativeArea,
+        place.country,
+      ].where((e) => e != null && e.isNotEmpty);
 
       return components.join(', ');
     } catch (e) {

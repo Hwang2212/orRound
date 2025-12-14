@@ -22,7 +22,10 @@ class AnalyticsProvider {
 
   static bool get isInitialized => _initialized;
 
-  static Future<void> logEvent({required String name, Map<String, Object?>? parameters}) async {
+  static Future<void> logEvent({
+    required String name,
+    Map<String, Object?>? parameters,
+  }) async {
     if (!_initialized || _analytics == null) {
       print('Analytics not initialized, event queued: $name');
       return;
@@ -35,7 +38,10 @@ class AnalyticsProvider {
     }
   }
 
-  static Future<void> setUserProperty({required String name, required String? value}) async {
+  static Future<void> setUserProperty({
+    required String name,
+    required String? value,
+  }) async {
     if (!_initialized || _analytics == null) {
       print('Analytics not initialized, user property queued: $name');
       return;

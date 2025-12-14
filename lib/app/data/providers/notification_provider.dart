@@ -8,11 +8,13 @@ import '../../modules/routes/routes.dart';
 /// Handles displaying, updating, and dismissing notifications for active
 /// and paused journey tracking sessions.
 class NotificationProvider {
-  static final NotificationProvider _instance = NotificationProvider._internal();
+  static final NotificationProvider _instance =
+      NotificationProvider._internal();
   factory NotificationProvider() => _instance;
   NotificationProvider._internal();
 
-  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
   static const String _channelId = 'journey_tracking';
   static const String _channelName = 'Journey Tracking';
   static const int _notificationId = 1;
@@ -27,14 +29,26 @@ class NotificationProvider {
       if (_isInitialized) return;
 
       // Android-specific initialization
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
 
       // iOS-specific initialization
-      const iosSettings = DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false);
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
 
-      const initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
 
-      await _notifications.initialize(initSettings, onDidReceiveNotificationResponse: _onNotificationTap);
+      await _notifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTap,
+      );
 
       // Create Android notification channel
       if (Platform.isAndroid) {
@@ -47,7 +61,11 @@ class NotificationProvider {
           enableVibration: false,
         );
 
-        await _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(androidChannel);
+        await _notifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.createNotificationChannel(androidChannel);
       }
 
       _isInitialized = true;
@@ -65,12 +83,25 @@ class NotificationProvider {
   Future<bool> requestPermission() async {
     try {
       if (Platform.isAndroid) {
-        final androidImplementation = _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-        final result = await androidImplementation?.requestNotificationsPermission();
+        final androidImplementation =
+            _notifications
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
+        final result =
+            await androidImplementation?.requestNotificationsPermission();
         return result ?? true; // Default to true for older Android versions
       } else if (Platform.isIOS) {
-        final iosImplementation = _notifications.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
-        final result = await iosImplementation?.requestPermissions(alert: true, badge: true, sound: false);
+        final iosImplementation =
+            _notifications
+                .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin
+                >();
+        final result = await iosImplementation?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: false,
+        );
         return result ?? false;
       }
       return false; // Unsupported platform
@@ -84,7 +115,10 @@ class NotificationProvider {
   ///
   /// Shows elapsed time and distance in the notification content.
   /// Updates are throttled by the caller (every 5 seconds when backgrounded).
-  Future<void> showTrackingNotification({required String elapsedTime, required double distanceKm}) async {
+  Future<void> showTrackingNotification({
+    required String elapsedTime,
+    required double distanceKm,
+  }) async {
     try {
       if (!_isInitialized) {
         print('NotificationProvider not initialized, skipping notification');
@@ -106,11 +140,23 @@ class NotificationProvider {
         silent: true,
       );
 
-      const iosDetails = DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: false);
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: false,
+      );
 
-      final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
 
-      await _notifications.show(_notificationId, 'Journey in Progress', 'Time: $elapsedTime • Distance: ${distanceKm.toStringAsFixed(2)} km', details);
+      await _notifications.show(
+        _notificationId,
+        'Journey in Progress',
+        'Time: $elapsedTime • Distance: ${distanceKm.toStringAsFixed(2)} km',
+        details,
+      );
     } catch (e) {
       print('Error showing tracking notification: $e');
     }
@@ -120,15 +166,24 @@ class NotificationProvider {
   ///
   /// This is more efficient than recreating the notification.
   /// Functionally identical to showTrackingNotification for this implementation.
-  Future<void> updateTrackingNotification({required String elapsedTime, required double distanceKm}) async {
+  Future<void> updateTrackingNotification({
+    required String elapsedTime,
+    required double distanceKm,
+  }) async {
     // For this implementation, update is the same as show
-    await showTrackingNotification(elapsedTime: elapsedTime, distanceKm: distanceKm);
+    await showTrackingNotification(
+      elapsedTime: elapsedTime,
+      distanceKm: distanceKm,
+    );
   }
 
   /// Display the paused notification with a prompt to resume.
   ///
   /// Shows last recorded stats (frozen, not updating).
-  Future<void> showPausedNotification({required String elapsedTime, required double distanceKm}) async {
+  Future<void> showPausedNotification({
+    required String elapsedTime,
+    required double distanceKm,
+  }) async {
     try {
       if (!_isInitialized) {
         print('NotificationProvider not initialized, skipping notification');
@@ -150,9 +205,16 @@ class NotificationProvider {
         silent: true,
       );
 
-      const iosDetails = DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: false);
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: false,
+      );
 
-      final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
 
       await _notifications.show(
         _notificationId,

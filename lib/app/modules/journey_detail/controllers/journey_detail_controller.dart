@@ -11,6 +11,7 @@ import '../../../data/models/journey.dart';
 import '../../../data/models/location_point.dart';
 import '../../../data/repositories/journey_repository.dart';
 import '../../../data/repositories/analytics_repository.dart';
+import '../../../utils/journey_title_generator.dart';
 
 class JourneyDetailController extends GetxController {
   final JourneyRepository _journeyRepo = JourneyRepository();
@@ -19,6 +20,7 @@ class JourneyDetailController extends GetxController {
   final Rx<Journey?> journey = Rx<Journey?>(null);
   final RxList<LocationPoint> locationPoints = <LocationPoint>[].obs;
   final RxBool isLoading = true.obs;
+  final RxBool isEditingTitle = false.obs;
   final GlobalKey screenshotKey = GlobalKey();
 
   @override
@@ -120,5 +122,73 @@ class JourneyDetailController extends GetxController {
       return '${j.temperature!.toStringAsFixed(1)}°C • ${j.weatherCondition}';
     }
     return j.weatherCondition!;
+  }
+
+  /// Returns the title to display - custom title or auto-generated
+  String get displayTitle {
+    final j = journey.value;
+    if (j == null) return '';
+
+    // If journey has a custom title, use it
+    if (j.title != null && j.title!.isNotEmpty) {
+      return j.title!;
+    }
+
+    // Otherwise generate a display title
+    return generateDisplayTitle(j.startTime);
+  }
+
+  /// Starts editing the journey title
+  void startEditingTitle() {
+    isEditingTitle.value = true;
+  }
+
+  /// Cancels editing the journey title
+  void cancelEditingTitle() {
+    isEditingTitle.value = false;
+  }
+
+  /// Saves the edited title
+  Future<void> saveTitle(String newTitle) async {
+    final j = journey.value;
+    if (j == null) return;
+
+    try {
+      // Trim and convert empty to null
+      final trimmedTitle = newTitle.trim();
+      final finalTitle = trimmedTitle.isEmpty ? null : trimmedTitle;
+
+      // Update in database
+      await _journeyRepo.updateJourneyTitle(j.id, finalTitle);
+
+      // Update local journey object
+      journey.value = Journey(
+        id: j.id,
+        startTime: j.startTime,
+        endTime: j.endTime,
+        totalDistance: j.totalDistance,
+        averageSpeed: j.averageSpeed,
+        weatherCondition: j.weatherCondition,
+        temperature: j.temperature,
+        title: finalTitle,
+        isSynced: j.isSynced,
+        createdAt: j.createdAt,
+      );
+
+      // Log analytics
+      await _analyticsRepo.logJourneyTitleEdited(journeyId: j.id, titleLength: finalTitle?.length ?? 0, isCleared: finalTitle == null);
+
+      // Close edit mode
+      isEditingTitle.value = false;
+
+      // Show success message
+      if (finalTitle == null) {
+        Get.snackbar('Title Cleared', 'Showing auto-generated title', snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
+      } else {
+        Get.snackbar('Title Updated', 'Journey title saved', snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to update title');
+    }
   }
 }

@@ -67,6 +67,18 @@ class JourneyRepository {
     await batch.commit(noResult: true);
   }
 
+  /// Updates the title of an existing journey.
+  /// Pass null to clear the title.
+  Future<void> updateJourneyTitle(String journeyId, String? title) async {
+    final db = await _dbProvider.database;
+
+    // Trim whitespace and convert empty strings to null
+    final cleanTitle = title?.trim();
+    final finalTitle = (cleanTitle == null || cleanTitle.isEmpty) ? null : cleanTitle;
+
+    await db.update('journeys', {'title': finalTitle}, where: 'id = ?', whereArgs: [journeyId]);
+  }
+
   String generateJourneyId() => _uuid.v4();
   String generatePointId() => _uuid.v4();
 }

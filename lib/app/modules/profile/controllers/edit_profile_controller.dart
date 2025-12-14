@@ -62,7 +62,10 @@ class EditProfileController extends GetxController {
     try {
       final fieldsUpdated = <String>[];
 
-      await _userRepo.updateUserProfile(name: name.isNotEmpty ? name : null, email: email.isNotEmpty ? email : null);
+      await _userRepo.updateUserProfile(
+        name: name.isNotEmpty ? name : null,
+        email: email.isNotEmpty ? email : null,
+      );
 
       if (name.isNotEmpty) fieldsUpdated.add('name');
       if (email.isNotEmpty) fieldsUpdated.add('email');

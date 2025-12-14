@@ -37,7 +37,12 @@ class ProfileController extends GetxController {
 
   Future<void> updateProfilePicture() async {
     try {
-      final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 85);
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
 
       if (image != null) {
         await _userRepo.updateUserProfile(profilePicturePath: image.path);
@@ -53,7 +58,12 @@ class ProfileController extends GetxController {
 
   Future<void> takeProfilePicture() async {
     try {
-      final XFile? image = await _imagePicker.pickImage(source: ImageSource.camera, maxWidth: 512, maxHeight: 512, imageQuality: 85);
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
 
       if (image != null) {
         await _userRepo.updateUserProfile(profilePicturePath: image.path);
@@ -87,7 +97,10 @@ class ProfileController extends GetxController {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Get.theme.colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
+        decoration: BoxDecoration(
+          color: Get.theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

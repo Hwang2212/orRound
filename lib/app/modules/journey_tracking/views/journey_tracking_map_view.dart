@@ -14,7 +14,10 @@ class JourneyTrackingMapView extends GetView<JourneyTrackingController> {
       final currentLoc = controller.currentLocation.value;
 
       // Priority: 1) Latest tracking point, 2) Current location, 3) World view
-      final center = points.isNotEmpty ? points.last.toLatLng() : (currentLoc ?? const LatLng(0, 0));
+      final center =
+          points.isNotEmpty
+              ? points.last.toLatLng()
+              : (currentLoc ?? const LatLng(0, 0));
       final hasLocation = points.isNotEmpty || currentLoc != null;
 
       // Auto-center map on latest location
@@ -36,20 +39,40 @@ class JourneyTrackingMapView extends GetView<JourneyTrackingController> {
           minZoom: 3.0,
           maxZoom: 18.0,
           interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.none, // Disable all interactions (dragging, pinching, rotating)
+            flags:
+                InteractiveFlag
+                    .none, // Disable all interactions (dragging, pinching, rotating)
           ),
         ),
         children: [
-          TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.orround.app'),
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.orround.app',
+          ),
           if (hasLocation) ...[
             PolylineLayer(
-              polylines: [Polyline(points: points.map((p) => p.toLatLng()).toList(), strokeWidth: 4.0, color: Theme.of(context).colorScheme.primary)],
+              polylines: [
+                Polyline(
+                  points: points.map((p) => p.toLatLng()).toList(),
+                  strokeWidth: 4.0,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ],
             ),
             MarkerLayer(
               markers: [
                 // Start marker
                 if (points.isNotEmpty)
-                  Marker(point: points.first.toLatLng(), width: 40, height: 40, child: const Icon(Icons.location_on, color: Colors.green, size: 40)),
+                  Marker(
+                    point: points.first.toLatLng(),
+                    width: 40,
+                    height: 40,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.green,
+                      size: 40,
+                    ),
+                  ),
                 // Current position marker
                 Marker(
                   point: center,
@@ -59,7 +82,10 @@ class JourneyTrackingMapView extends GetView<JourneyTrackingController> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Theme.of(context).colorScheme.surface, width: 3),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 3,
+                      ),
                     ),
                   ),
                 ),

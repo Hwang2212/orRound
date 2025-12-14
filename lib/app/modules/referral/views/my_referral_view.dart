@@ -14,15 +14,27 @@ class MyReferralView extends GetView<ReferralController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.card_giftcard, size: 80, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.card_giftcard,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
+            ),
 
             const SizedBox(height: 24),
 
-            Text('Share your code with friends', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+            Text(
+              'Share your code with friends',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
 
             const SizedBox(height: 8),
 
-            Text('When they sign up with your code, you both get rewards!', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              'When they sign up with your code, you both get rewards!',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
 
             const SizedBox(height: 32),
 
@@ -32,7 +44,10 @@ class MyReferralView extends GetView<ReferralController> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
                 ),
                 child: Text(
                   controller.referralCode.value,
@@ -52,7 +67,12 @@ class MyReferralView extends GetView<ReferralController> {
               onPressed: controller.copyReferralCode,
               icon: const Icon(Icons.copy),
               label: const Text('Copy Code'),
-              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
             ),
           ],
         ),
