@@ -18,7 +18,7 @@ class JourneyTrackingMapView extends GetView<JourneyTrackingController> {
       final hasLocation = points.isNotEmpty || currentLoc != null;
 
       // Auto-center map on latest location
-      if (hasLocation && controller.mapController.camera != null) {
+      if (hasLocation) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           try {
             controller.mapController.move(center, 15.0);

@@ -63,12 +63,15 @@ The system SHALL display the user's current speed during journey tracking.
 
 ### Requirement: Route Map Visualization
 
-The system SHALL display the tracked route on a map during journey tracking.
+The system SHALL display the tracked route on a map during journey tracking AND allow users to toggle map visibility.
 
 #### Scenario: View Tracking Map
 
 - **GIVEN** the user has started a journey
 - **WHEN** viewing the journey tracking page
+- **THEN** the map is hidden by default to conserve screen space and battery
+- **AND** a toggle button is visible to show/hide the map
+- **WHEN** the user taps the map toggle button
 - **THEN** the system displays OpenStreetMap tiles as the base map
 - **AND** shows a loading indicator while acquiring GPS location
 - **AND** centers map on user's location once acquired
@@ -77,9 +80,44 @@ The system SHALL display the tracked route on a map during journey tracking.
 - **AND** displays a primary-colored current position marker
 - **AND** auto-updates map as new location points are received
 
+#### Scenario: Toggle Map Visibility
+
+- **GIVEN** journey tracking is active
+- **WHEN** the user taps the map toggle button
+- **THEN** the map visibility toggles between shown and hidden
+- **AND** the toggle button icon updates to reflect current state (eye icon when hidden, eye-slash when shown, or map icon)
+- **AND** the statistics display area expands when map is hidden
+- **AND** the statistics display area contracts when map is shown
+- **AND** route recording continues normally regardless of map visibility
+
+#### Scenario: Map Hidden by Default
+
+- **GIVEN** the user starts a new journey
+- **WHEN** the journey tracking page loads
+- **THEN** the map is hidden by default
+- **AND** the statistics display occupies the full available space
+- **AND** a hint indicates "Route is being recorded" to confirm tracking is active
+- **AND** the toggle button is prominently visible
+- **AND** all tracking statistics (time, distance, speed) are displayed
+
+#### Scenario: Map Toggle State Persistence During Session
+
+- **GIVEN** journey tracking is active with map shown
+- **WHEN** the user pauses the journey
+- **THEN** the map visibility state is maintained
+- **WHEN** the user resumes the journey
+- **THEN** the map remains in the same visibility state (shown or hidden)
+
 **IMPLEMENTATION NOTES:**
 
-- Map always renders (even before location is acquired) to avoid blank screen
+- Map default state: hidden (`showMap = false` initially)
+- Map only renders when `showMap = true` to save resources
+- Toggle button: FloatingActionButton or IconButton in app bar
+- Icon suggestions: `Icons.map` / `Icons.map_outlined` or `Icons.visibility` / `Icons.visibility_off`
+- When hidden, statistics container uses `flex: 3` instead of `flex: 1`
+- When shown, map uses `flex: 2`, stats use `flex: 1` (current layout)
+- Location tracking stream continues regardless of map visibility
+- Map state does NOT persist across app restarts or new journeys (resets to hidden)
 - Initial zoom level is 2.0 (world view) when no location, 15.0 when tracking
 - Map uses flutter_map with OpenStreetMap tiles
 - Timer starts immediately when Start button is pressed (non-blocking)
@@ -121,7 +159,7 @@ The system SHALL provide controls to pause, resume, and end journey tracking.
 
 ### Requirement: Background Tracking
 
-The system SHALL continue tracking when the app is backgrounded AND display a persistent notification with real-time journey statistics.
+The system SHALL continue tracking when the app is backgrounded AND SHALL maintain location recording even when the device enters deep sleep or doze mode AND display a persistent notification with real-time journey statistics.
 
 #### Scenario: Track in Background with Notification
 
@@ -134,6 +172,47 @@ The system SHALL continue tracking when the app is backgrounded AND display a pe
 - **AND** notification is not dismissible by the user (ongoing notification on Android)
 - **AND** notification shows on lock screen
 - **AND** notification is silent (no sound or vibration)
+
+#### Scenario: Track During Device Deep Sleep
+
+- **GIVEN** journey tracking is active and app is backgrounded
+- **WHEN** the device screen is locked and enters doze/deep sleep mode
+- **THEN** the system continues recording location data without interruption
+- **AND** location points are captured at the configured interval (5 seconds or 10 meters)
+- **AND** no gaps appear in the recorded route
+- **AND** elapsed timer continues accurately
+- **AND** notification remains visible on lock screen
+- **AND** distance calculations include all movement during sleep
+
+**IMPLEMENTATION NOTES:**
+
+- On Android: Uses foreground service with location service type
+- On iOS: Uses UIBackgroundModes location configuration
+- Foreground service notification reuses the existing tracking notification
+- Service lifecycle matches journey tracking lifecycle (start/stop)
+- Location updates configured for high accuracy with 5-second/10-meter intervals
+
+#### Scenario: Resume from Deep Sleep
+
+- **GIVEN** journey tracking is active with device in deep sleep
+- **WHEN** the user wakes the device or opens the app
+- **THEN** the system displays all location points recorded during sleep
+- **AND** route visualization shows continuous path with no jumps
+- **AND** distance and elapsed time are accurate
+- **AND** current location marker is at the most recent recorded position
+
+#### Scenario: Foreground Service Lifecycle on Android
+
+- **GIVEN** journey tracking is active
+- **WHEN** the journey starts
+- **THEN** the system starts a foreground service with location service type
+- **AND** displays the tracking notification as the foreground service notification
+- **WHEN** the journey is paused
+- **THEN** the foreground service continues running
+- **AND** notification updates to show paused state
+- **WHEN** the journey ends or is stopped
+- **THEN** the foreground service is stopped
+- **AND** notification is removed
 
 #### Scenario: Notification Displays Journey Stats
 
@@ -158,6 +237,7 @@ The system SHALL continue tracking when the app is backgrounded AND display a pe
 - **GIVEN** journey tracking is active with notification displayed
 - **WHEN** the user stops the journey
 - **THEN** the system immediately removes the notification
+- **AND** stops the foreground service (Android)
 - **AND** continues normal journey end flow (save, navigate to detail)
 
 #### Scenario: Show Paused Notification
@@ -169,6 +249,7 @@ The system SHALL continue tracking when the app is backgrounded AND display a pe
 - **AND** notification content shows "Tap to resume tracking"
 - **AND** notification shows last recorded elapsed time and distance (not updating)
 - **AND** notification remains visible while paused
+- **AND** foreground service continues running (Android)
 
 #### Scenario: Return to Foreground
 
@@ -177,6 +258,7 @@ The system SHALL continue tracking when the app is backgrounded AND display a pe
 - **THEN** the notification remains visible (for consistency)
 - **AND** notification updates stop if tracking is active (optimization)
 - **AND** notification updates resume when backgrounded again
+- **AND** foreground service continues running (Android)
 
 #### Scenario: Resume via Paused Notification Tap
 
@@ -192,7 +274,7 @@ The system SHALL continue tracking when the app is backgrounded AND display a pe
 - **GIVEN** user has denied notification permissions
 - **WHEN** journey tracking starts
 - **THEN** the system continues tracking normally
-- **AND** no notification is displayed
+- **AND** foreground service runs without notification (Android, with warning logged)
 - **AND** no error message is shown to user
 - **AND** all other tracking features work as expected
 
@@ -277,14 +359,54 @@ The system SHALL initialize the notification provider at app startup.
 - **AND** notification tap callback is registered to navigate to Routes.JOURNEY_TRACKING
 - **AND** initialization errors are caught and logged without crashing app
 
-#### Scenario: Notification Tap Callback Registration
+### Requirement: Map Visibility Control
 
-- **GIVEN** NotificationProvider is initialized
-- **WHEN** a journey tracking notification is tapped
-- **THEN** the registered callback executes
-- **AND** navigates to Routes.JOURNEY_TRACKING using Get.toNamed()
-- **AND** restores existing journey tracking session if controller exists
-- **AND** callback works whether app is backgrounded or terminated
+The system SHALL provide a visible control to toggle map display during journey tracking.
+
+#### Scenario: Access Map Toggle Button
+
+- **GIVEN** journey tracking is active or inactive
+- **WHEN** viewing the journey tracking page
+- **THEN** a map toggle button is visible and accessible
+- **AND** the button displays an appropriate icon indicating current map state
+- **AND** the button has a clear tap target (minimum 44x44 points)
+- **AND** tapping the button toggles map visibility with smooth transition
+
+#### Scenario: Visual Feedback for Map State
+
+- **GIVEN** the user is viewing the journey tracking page
+- **WHEN** the map is hidden
+- **THEN** the toggle button shows a "show map" icon (e.g., map icon or visibility icon)
+- **AND** a subtle hint text appears: "Route is being recorded"
+- **WHEN** the map is shown
+- **THEN** the toggle button shows a "hide map" icon (e.g., map outlined or visibility off)
+- **AND** the hint text is not displayed
+
+**IMPLEMENTATION NOTES:**
+
+- Toggle button positioned in app bar actions or as FloatingActionButton
+- Smooth animation when transitioning between map shown/hidden states (e.g., 300ms)
+- Hint text appears below statistics when map is hidden
+- Hint text style: `Theme.of(context).textTheme.bodySmall` with secondary color
+
+### Requirement: Battery Efficiency During Deep Sleep Tracking
+
+The system SHALL optimize battery usage while maintaining continuous location tracking during device deep sleep.
+
+#### Scenario: Efficient Location Updates
+
+- **GIVEN** journey tracking is active with foreground service running
+- **WHEN** the device enters doze mode
+- **THEN** location updates continue at the configured interval
+- **AND** battery drain is comparable to other fitness tracking apps
+- **AND** system uses GPS efficiently (not constant polling)
+
+**IMPLEMENTATION NOTES:**
+
+- Location interval: 5 seconds or 10 meters (whichever comes first)
+- High accuracy mode for GPS tracking
+- Foreground service type: `location` (Android)
+- Background location capability enabled (iOS)
 
 ### Requirement: Weather Recording at Journey End
 

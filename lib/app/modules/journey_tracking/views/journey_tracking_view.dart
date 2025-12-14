@@ -9,15 +9,29 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Journey Tracking'), leading: IconButton(icon: const Icon(Icons.close), onPressed: () => _showStopDialog(context))),
-      body: Column(
-        children: [
-          // Map
-          Expanded(flex: 2, child: const JourneyTrackingMapView()),
-
-          // Stats
-          Expanded(child: _buildStats(context)),
+      appBar: AppBar(
+        title: const Text('Journey Tracking'),
+        leading: IconButton(icon: const Icon(Icons.close), onPressed: () => _showStopDialog(context)),
+        actions: [
+          Obx(
+            () => IconButton(
+              icon: Icon(controller.showMap.value ? Icons.visibility_off : Icons.visibility),
+              tooltip: controller.showMap.value ? 'Hide map' : 'Show map',
+              onPressed: controller.toggleMap,
+            ),
+          ),
         ],
+      ),
+      body: Obx(
+        () => Column(
+          children: [
+            // Map
+            if (controller.showMap.value) Expanded(flex: 2, child: const JourneyTrackingMapView()),
+
+            // Stats
+            Expanded(flex: controller.showMap.value ? 1 : 3, child: _buildStats(context)),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildControls(context),
     );
@@ -45,6 +59,12 @@ class JourneyTrackingView extends GetView<JourneyTrackingController> {
                 _buildStatItem(context, icon: Icons.speed, label: 'Speed', value: '${controller.currentSpeedKmh.value.toStringAsFixed(1)} km/h'),
               ],
             ),
+
+            // Hint text when map is hidden
+            if (!controller.showMap.value) ...[
+              const SizedBox(height: 24),
+              Text('Route is being recorded', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.secondary)),
+            ],
           ],
         );
       }),

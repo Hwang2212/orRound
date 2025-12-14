@@ -13,6 +13,7 @@ import '../../../data/repositories/weather_repository.dart';
 import '../../../data/repositories/analytics_repository.dart';
 import '../../../data/providers/location_provider.dart';
 import '../../../data/providers/notification_provider.dart';
+import '../../../data/providers/foreground_service_provider.dart';
 
 class JourneyTrackingController extends GetxController with WidgetsBindingObserver {
   final JourneyRepository _journeyRepo = JourneyRepository();
@@ -20,6 +21,7 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
   final AnalyticsRepository _analyticsRepo = AnalyticsRepository();
   final LocationProvider _locationProvider = LocationProvider();
   final NotificationProvider _notificationProvider = NotificationProvider();
+  final ForegroundServiceProvider _foregroundService = ForegroundServiceProvider();
 
   final RxList<LocationPoint> locationPoints = <LocationPoint>[].obs;
   final Rx<WeatherData?> startWeather = Rx<WeatherData?>(null);
@@ -30,6 +32,7 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
   final RxDouble currentSpeedKmh = 0.0.obs;
   final RxBool hasLocationPermission = false.obs;
   final Rx<LatLng?> currentLocation = Rx<LatLng?>(null);
+  final RxBool showMap = false.obs;
   final MapController mapController = MapController();
 
   late String _journeyId;
@@ -44,6 +47,7 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
+    _foregroundService.initialize();
     _checkPermissions();
     _getInitialLocation();
   }
@@ -158,6 +162,15 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
       await _notificationProvider.showTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
     }
 
+    // Start foreground service to prevent deep sleep from stopping location updates
+    try {
+      await _foregroundService.startService(title: 'Journey in Progress', content: 'Distance: 0.00 km | Time: 00:00');
+      print('Foreground service started successfully');
+    } catch (e) {
+      print('Error starting foreground service: $e');
+      // Continue tracking even if foreground service fails
+    }
+
     await _analyticsRepo.logJourneyStarted(hasLocationPermission: hasLocationPermission.value, hasNotificationPermission: hasNotificationPermission);
   }
 
@@ -232,6 +245,7 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
     _locationSubscription?.cancel();
     _locationProvider.enableBackgroundMode(false);
     _notificationProvider.hideTrackingNotification();
+    _foregroundService.stopService();
   }
 
   void _onLocationUpdate(loc.LocationData location) {
@@ -276,9 +290,13 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
     elapsedSeconds.value = (elapsed / 1000).floor();
     print('Timer tick: elapsed=${elapsedSeconds.value}s');
 
-    // Update notification when backgrounded (throttled to every 5 seconds)
+    // Update notification and foreground service when backgrounded (throttled to every 5 seconds)
     if (_isAppInBackground && elapsedSeconds.value % 5 == 0) {
       _notificationProvider.updateTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
+      _foregroundService.updateNotification(
+        title: 'Journey in Progress',
+        content: 'Distance: ${distanceKm.value.toStringAsFixed(2)} km | Time: $formattedDuration',
+      );
     }
   }
 
@@ -309,5 +327,9 @@ class JourneyTrackingController extends GetxController with WidgetsBindingObserv
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void toggleMap() {
+    showMap.value = !showMap.value;
   }
 }
