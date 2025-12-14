@@ -18,11 +18,14 @@ class AnalyticsRepository {
   }
 
   // Journey events
-  Future<void> logJourneyStarted({required bool hasLocationPermission}) async {
-    await _analytics?.logEvent(
-      name: 'journey_started',
-      parameters: {'has_location_permission': hasLocationPermission ? 1 : 0, 'timestamp': DateTime.now().millisecondsSinceEpoch},
-    );
+  Future<void> logJourneyStarted({required bool hasLocationPermission, bool? hasNotificationPermission}) async {
+    final parameters = {'has_location_permission': hasLocationPermission ? 1 : 0, 'timestamp': DateTime.now().millisecondsSinceEpoch};
+
+    if (hasNotificationPermission != null) {
+      parameters['has_notification_permission'] = hasNotificationPermission ? 1 : 0;
+    }
+
+    await _analytics?.logEvent(name: 'journey_started', parameters: parameters);
   }
 
   Future<void> logJourneyPaused({required int durationSeconds}) async {

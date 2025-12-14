@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'app/config/theme.dart';
 import 'app/config/routes.dart';
 import 'app/modules/routes/routes.dart';
+import 'app/data/providers/notification_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,13 @@ void main() async {
     await Firebase.initializeApp();
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
+  }
+
+  // Initialize Notifications
+  try {
+    await NotificationProvider().initialize();
+  } catch (e) {
+    debugPrint('Notification initialization error: $e');
   }
 
   runApp(const OrroundApp());

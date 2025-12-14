@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:location/location.dart' as loc;
 import 'package:flutter_map/flutter_map.dart';
@@ -11,12 +12,14 @@ import '../../../data/repositories/journey_repository.dart';
 import '../../../data/repositories/weather_repository.dart';
 import '../../../data/repositories/analytics_repository.dart';
 import '../../../data/providers/location_provider.dart';
+import '../../../data/providers/notification_provider.dart';
 
-class JourneyTrackingController extends GetxController {
+class JourneyTrackingController extends GetxController with WidgetsBindingObserver {
   final JourneyRepository _journeyRepo = JourneyRepository();
   final WeatherRepository _weatherRepo = WeatherRepository();
   final AnalyticsRepository _analyticsRepo = AnalyticsRepository();
   final LocationProvider _locationProvider = LocationProvider();
+  final NotificationProvider _notificationProvider = NotificationProvider();
 
   final RxList<LocationPoint> locationPoints = <LocationPoint>[].obs;
   final Rx<WeatherData?> startWeather = Rx<WeatherData?>(null);
@@ -35,18 +38,27 @@ class JourneyTrackingController extends GetxController {
   int _totalPausedMillis = 0;
   Timer? _timer;
   StreamSubscription<loc.LocationData>? _locationSubscription;
+  bool _isAppInBackground = false;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _checkPermissions();
     _getInitialLocation();
   }
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopTracking();
     super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppInBackground = state == AppLifecycleState.paused || state == AppLifecycleState.inactive;
+    print('App lifecycle state changed: $state, isBackground: $_isAppInBackground');
   }
 
   Future<void> _getInitialLocation() async {
@@ -140,7 +152,13 @@ class JourneyTrackingController extends GetxController {
           print('ERROR fetching location: $error');
         });
 
-    await _analyticsRepo.logJourneyStarted(hasLocationPermission: hasLocationPermission.value);
+    // Request notification permission and show notification
+    final hasNotificationPermission = await _notificationProvider.requestPermission();
+    if (hasNotificationPermission) {
+      await _notificationProvider.showTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
+    }
+
+    await _analyticsRepo.logJourneyStarted(hasLocationPermission: hasLocationPermission.value, hasNotificationPermission: hasNotificationPermission);
   }
 
   void pauseTracking() {
@@ -149,6 +167,9 @@ class JourneyTrackingController extends GetxController {
     isPaused.value = true;
     _pauseStartTime = DateTime.now().millisecondsSinceEpoch;
     _locationSubscription?.pause();
+
+    // Show paused notification
+    _notificationProvider.showPausedNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
 
     _analyticsRepo.logJourneyPaused(durationSeconds: elapsedSeconds.value);
   }
@@ -163,6 +184,9 @@ class JourneyTrackingController extends GetxController {
 
     isPaused.value = false;
     _locationSubscription?.resume();
+
+    // Show active tracking notification again
+    _notificationProvider.showTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
   }
 
   Future<void> stopTracking() async {
@@ -207,6 +231,7 @@ class JourneyTrackingController extends GetxController {
     _timer?.cancel();
     _locationSubscription?.cancel();
     _locationProvider.enableBackgroundMode(false);
+    _notificationProvider.hideTrackingNotification();
   }
 
   void _onLocationUpdate(loc.LocationData location) {
@@ -250,6 +275,11 @@ class JourneyTrackingController extends GetxController {
     final elapsed = now - _startTime! - _totalPausedMillis;
     elapsedSeconds.value = (elapsed / 1000).floor();
     print('Timer tick: elapsed=${elapsedSeconds.value}s');
+
+    // Update notification when backgrounded (throttled to every 5 seconds)
+    if (_isAppInBackground && elapsedSeconds.value % 5 == 0) {
+      _notificationProvider.updateTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
+    }
   }
 
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
