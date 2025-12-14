@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "846745140818",
+    "project_id": "orround-62bd2",
+    "storage_bucket": "orround-62bd2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846745140818:android:a726e1d77101941d7b298b",
+        "android_client_info": {
+          "package_name": "com.oranastudiomy.orround"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRIXm-AbiFXvsEu86yzb-qutXWyiVny8E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
