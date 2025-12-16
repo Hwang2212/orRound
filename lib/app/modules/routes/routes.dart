@@ -6,4 +6,5 @@ abstract class Routes {
   static const EDIT_PROFILE = '/edit-profile';
   static const MY_REFERRAL = '/my-referral';
   static const ENTER_REFERRAL = '/enter-referral';
+  static const ACHIEVEMENTS = '/achievements';
 }

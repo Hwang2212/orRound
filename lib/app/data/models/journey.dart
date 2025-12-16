@@ -1,3 +1,5 @@
+import 'journey_category.dart';
+
 class Journey {
   final String id;
   final int startTime;
@@ -9,6 +11,8 @@ class Journey {
   final String? title;
   final int isSynced;
   final int createdAt;
+  final JourneyCategory category;
+  final List<String> tags;
 
   Journey({
     required this.id,
@@ -21,6 +25,8 @@ class Journey {
     this.title,
     this.isSynced = 0,
     required this.createdAt,
+    this.category = JourneyCategory.other,
+    this.tags = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -35,10 +41,15 @@ class Journey {
       'title': title,
       'is_synced': isSynced,
       'created_at': createdAt,
+      'category': category.name,
+      'tags': tags.join(','),
     };
   }
 
   factory Journey.fromMap(Map<String, dynamic> map) {
+    final tagsString = map['tags'] as String? ?? '';
+    final tagsList = tagsString.isEmpty ? <String>[] : tagsString.split(',');
+
     return Journey(
       id: map['id'] as String,
       startTime: map['start_time'] as int,
@@ -50,6 +61,8 @@ class Journey {
       temperature: (map['temperature'] as num?)?.toDouble(),
       isSynced: map['is_synced'] as int? ?? 0,
       createdAt: map['created_at'] as int,
+      category: JourneyCategory.fromString(map['category'] as String? ?? 'other'),
+      tags: tagsList,
     );
   }
 

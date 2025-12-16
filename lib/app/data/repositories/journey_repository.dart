@@ -51,6 +51,14 @@ class JourneyRepository {
     return (result.first['count'] as int?) ?? 0;
   }
 
+  /// Gets the total distance traveled across all journeys
+  Future<double> getTotalDistance() async {
+    final db = await _dbProvider.database;
+    final result = await db.rawQuery('SELECT SUM(total_distance) as total FROM journeys');
+    final total = result.first['total'];
+    return (total as num?)?.toDouble() ?? 0.0;
+  }
+
   Future<void> saveLocationPoint(LocationPoint point) async {
     final db = await _dbProvider.database;
     await db.insert('location_points', point.toMap());
@@ -77,6 +85,19 @@ class JourneyRepository {
     final finalTitle = (cleanTitle == null || cleanTitle.isEmpty) ? null : cleanTitle;
 
     await db.update('journeys', {'title': finalTitle}, where: 'id = ?', whereArgs: [journeyId]);
+  }
+
+  /// Updates the category of an existing journey.
+  Future<void> updateJourneyCategory(String journeyId, String category) async {
+    final db = await _dbProvider.database;
+    await db.update('journeys', {'category': category}, where: 'id = ?', whereArgs: [journeyId]);
+  }
+
+  /// Updates the tags of an existing journey.
+  Future<void> updateJourneyTags(String journeyId, List<String> tags) async {
+    final db = await _dbProvider.database;
+    final tagsString = tags.join(',');
+    await db.update('journeys', {'tags': tagsString}, where: 'id = ?', whereArgs: [journeyId]);
   }
 
   String generateJourneyId() => _uuid.v4();

@@ -6,6 +6,7 @@ import 'package:location/location.dart' as loc;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../data/models/journey.dart';
+import '../../../data/models/journey_category.dart';
 import '../../../data/models/location_point.dart';
 import '../../../data/models/weather_data.dart';
 import '../../../data/repositories/journey_repository.dart';
@@ -14,16 +15,18 @@ import '../../../data/repositories/analytics_repository.dart';
 import '../../../data/providers/location_provider.dart';
 import '../../../data/providers/notification_provider.dart';
 import '../../../data/providers/foreground_service_provider.dart';
+import '../../../data/providers/screen_wake_provider.dart';
+import '../../../services/achievement_service.dart';
+import '../../../widgets/achievement_celebration_dialog.dart';
 
-class JourneyTrackingController extends GetxController
-    with WidgetsBindingObserver {
+class JourneyTrackingController extends GetxController with WidgetsBindingObserver {
   final JourneyRepository _journeyRepo = JourneyRepository();
   final WeatherRepository _weatherRepo = WeatherRepository();
   final AnalyticsRepository _analyticsRepo = AnalyticsRepository();
   final LocationProvider _locationProvider = LocationProvider();
   final NotificationProvider _notificationProvider = NotificationProvider();
-  final ForegroundServiceProvider _foregroundService =
-      ForegroundServiceProvider();
+  final ForegroundServiceProvider _foregroundService = ForegroundServiceProvider();
+  final ScreenWakeProvider _screenWakeProvider = ScreenWakeProvider();
 
   final RxList<LocationPoint> locationPoints = <LocationPoint>[].obs;
   final Rx<WeatherData?> startWeather = Rx<WeatherData?>(null);
@@ -35,7 +38,10 @@ class JourneyTrackingController extends GetxController
   final RxBool hasLocationPermission = false.obs;
   final Rx<LatLng?> currentLocation = Rx<LatLng?>(null);
   final RxBool showMap = false.obs;
+  final RxBool isMapDragging = false.obs;
+  final Rx<JourneyCategory> selectedCategory = JourneyCategory.other.obs;
   final MapController mapController = MapController();
+  Timer? _mapSnapBackTimer;
 
   late String _journeyId;
   int? _startTime;
@@ -57,26 +63,21 @@ class JourneyTrackingController extends GetxController
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
+    _mapSnapBackTimer?.cancel();
     _stopTracking();
     super.onClose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _isAppInBackground =
-        state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive;
-    print(
-      'App lifecycle state changed: $state, isBackground: $_isAppInBackground',
-    );
+    _isAppInBackground = state == AppLifecycleState.paused || state == AppLifecycleState.inactive;
+    print('App lifecycle state changed: $state, isBackground: $_isAppInBackground');
   }
 
   Future<void> _getInitialLocation() async {
     try {
       final location = await _locationProvider.getCurrentLocation();
-      if (location != null &&
-          location.latitude != null &&
-          location.longitude != null) {
+      if (location != null && location.latitude != null && location.longitude != null) {
         currentLocation.value = LatLng(location.latitude!, location.longitude!);
         print('Initial location set: ${currentLocation.value}');
       }
@@ -98,10 +99,7 @@ class JourneyTrackingController extends GetxController
     if (!hasLocationPermission.value) {
       await _checkPermissions();
       if (!hasLocationPermission.value) {
-        Get.snackbar(
-          'Permission Required',
-          'Location permission is needed to track your journey',
-        );
+        Get.snackbar('Permission Required', 'Location permission is needed to track your journey');
         return;
       }
     }
@@ -122,39 +120,27 @@ class JourneyTrackingController extends GetxController
     print('Timer started');
 
     // Configure location provider for tracking
-    await _locationProvider.changeSettings(
-      accuracy: loc.LocationAccuracy.high,
-      interval: 5000,
-      distanceFilter: 10,
-    );
+    await _locationProvider.changeSettings(accuracy: loc.LocationAccuracy.high, interval: 5000, distanceFilter: 10);
 
     // Try to enable background mode (may fail if background permission not granted)
     try {
       await _locationProvider.enableBackgroundMode(true);
       print('Background mode enabled');
     } catch (e) {
-      print(
-        'Background mode not available (requires background location permission): $e',
-      );
+      print('Background mode not available (requires background location permission): $e');
       // Continue without background mode - foreground tracking will still work
     }
 
     // Start location tracking stream
-    _locationSubscription = _locationProvider.getLocationStream().listen(
-      _onLocationUpdate,
-    );
+    _locationSubscription = _locationProvider.getLocationStream().listen(_onLocationUpdate);
     print('Location stream started');
 
     // Get initial weather and location (async, don't block)
     _locationProvider
         .getCurrentLocation()
         .then((currentLocation) {
-          print(
-            'Got initial location: lat=${currentLocation?.latitude}, lng=${currentLocation?.longitude}',
-          );
-          if (currentLocation != null &&
-              currentLocation.latitude != null &&
-              currentLocation.longitude != null) {
+          print('Got initial location: lat=${currentLocation?.latitude}, lng=${currentLocation?.longitude}');
+          if (currentLocation != null && currentLocation.latitude != null && currentLocation.longitude != null) {
             // Add initial location point for map display
             final initialPoint = LocationPoint(
               id: _journeyRepo.generatePointId(),
@@ -165,19 +151,12 @@ class JourneyTrackingController extends GetxController
               timestamp: DateTime.now().millisecondsSinceEpoch,
             );
             locationPoints.add(initialPoint);
-            print(
-              'Added initial location point, total points: ${locationPoints.length}',
-            );
+            print('Added initial location point, total points: ${locationPoints.length}');
 
             // Get weather
-            _weatherRepo
-                .getCurrentWeather(
-                  currentLocation.latitude!,
-                  currentLocation.longitude!,
-                )
-                .then((weather) {
-                  startWeather.value = weather;
-                });
+            _weatherRepo.getCurrentWeather(currentLocation.latitude!, currentLocation.longitude!).then((weather) {
+              startWeather.value = weather;
+            });
           } else {
             print('ERROR: getCurrentLocation returned null or invalid data');
           }
@@ -187,31 +166,30 @@ class JourneyTrackingController extends GetxController
         });
 
     // Request notification permission and show notification
-    final hasNotificationPermission =
-        await _notificationProvider.requestPermission();
+    final hasNotificationPermission = await _notificationProvider.requestPermission();
     if (hasNotificationPermission) {
-      await _notificationProvider.showTrackingNotification(
-        elapsedTime: formattedDuration,
-        distanceKm: distanceKm.value,
-      );
+      await _notificationProvider.showTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
     }
 
     // Start foreground service to prevent deep sleep from stopping location updates
     try {
-      await _foregroundService.startService(
-        title: 'Journey in Progress',
-        content: 'Distance: 0.00 km | Time: 00:00',
-      );
+      await _foregroundService.startService(title: 'Journey in Progress', content: 'Distance: 0.00 km | Time: 00:00');
       print('Foreground service started successfully');
     } catch (e) {
       print('Error starting foreground service: $e');
       // Continue tracking even if foreground service fails
     }
 
-    await _analyticsRepo.logJourneyStarted(
-      hasLocationPermission: hasLocationPermission.value,
-      hasNotificationPermission: hasNotificationPermission,
-    );
+    // Enable screen wake lock and dim screen to save battery
+    try {
+      await _screenWakeProvider.enableTrackingMode();
+      print('Screen wake and dimming enabled');
+    } catch (e) {
+      print('Error enabling screen wake: $e');
+      // Continue tracking even if screen wake fails
+    }
+
+    await _analyticsRepo.logJourneyStarted(hasLocationPermission: hasLocationPermission.value, hasNotificationPermission: hasNotificationPermission);
   }
 
   void pauseTracking() {
@@ -222,10 +200,7 @@ class JourneyTrackingController extends GetxController
     _locationSubscription?.pause();
 
     // Show paused notification
-    _notificationProvider.showPausedNotification(
-      elapsedTime: formattedDuration,
-      distanceKm: distanceKm.value,
-    );
+    _notificationProvider.showPausedNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
 
     _analyticsRepo.logJourneyPaused(durationSeconds: elapsedSeconds.value);
   }
@@ -234,8 +209,7 @@ class JourneyTrackingController extends GetxController
     if (!isTracking.value || !isPaused.value) return;
 
     if (_pauseStartTime != null) {
-      _totalPausedMillis +=
-          DateTime.now().millisecondsSinceEpoch - _pauseStartTime!;
+      _totalPausedMillis += DateTime.now().millisecondsSinceEpoch - _pauseStartTime!;
       _pauseStartTime = null;
     }
 
@@ -243,10 +217,7 @@ class JourneyTrackingController extends GetxController
     _locationSubscription?.resume();
 
     // Show active tracking notification again
-    _notificationProvider.showTrackingNotification(
-      elapsedTime: formattedDuration,
-      distanceKm: distanceKm.value,
-    );
+    _notificationProvider.showTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
   }
 
   Future<void> stopTracking() async {
@@ -264,6 +235,7 @@ class JourneyTrackingController extends GetxController
         averageSpeed: _calculateAverageSpeed(),
         weatherCondition: startWeather.value?.condition,
         temperature: startWeather.value?.temperature,
+        category: selectedCategory.value,
         createdAt: _startTime!,
       );
 
@@ -277,8 +249,18 @@ class JourneyTrackingController extends GetxController
         hasWeather: startWeather.value != null,
       );
 
+      // Check for new achievements
+      final achievementService = AchievementService();
+      final newAchievements = await achievementService.checkAchievements();
+
       Get.back(result: journey.id);
       Get.snackbar('Journey Saved', 'Your journey has been saved');
+
+      // Show achievement celebration for the first unlocked achievement
+      if (newAchievements.isNotEmpty) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        AchievementCelebrationDialog.show(newAchievements.first);
+      }
     } else {
       Get.back();
       Get.snackbar('Journey Too Short', 'Not enough data to save');
@@ -293,15 +275,16 @@ class JourneyTrackingController extends GetxController
     _locationProvider.enableBackgroundMode(false);
     _notificationProvider.hideTrackingNotification();
     _foregroundService.stopService();
+
+    // Disable screen wake lock and restore brightness
+    _screenWakeProvider.disableTrackingMode().catchError((error) {
+      print('Error disabling screen wake: $error');
+    });
   }
 
   void _onLocationUpdate(loc.LocationData location) {
-    print(
-      'Location update received: lat=${location.latitude}, lng=${location.longitude}',
-    );
-    if (isPaused.value ||
-        location.latitude == null ||
-        location.longitude == null) {
+    print('Location update received: lat=${location.latitude}, lng=${location.longitude}');
+    if (isPaused.value || location.latitude == null || location.longitude == null) {
       return;
     }
 
@@ -319,12 +302,7 @@ class JourneyTrackingController extends GetxController
     // Update distance
     if (locationPoints.length > 1) {
       final prev = locationPoints[locationPoints.length - 2];
-      distanceKm.value += _calculateDistance(
-        prev.latitude,
-        prev.longitude,
-        point.latitude,
-        point.longitude,
-      );
+      distanceKm.value += _calculateDistance(prev.latitude, prev.longitude, point.latitude, point.longitude);
     }
 
     // Update speed
@@ -348,34 +326,20 @@ class JourneyTrackingController extends GetxController
 
     // Update notification and foreground service when backgrounded (throttled to every 5 seconds)
     if (_isAppInBackground && elapsedSeconds.value % 5 == 0) {
-      _notificationProvider.updateTrackingNotification(
-        elapsedTime: formattedDuration,
-        distanceKm: distanceKm.value,
-      );
+      _notificationProvider.updateTrackingNotification(elapsedTime: formattedDuration, distanceKm: distanceKm.value);
       _foregroundService.updateNotification(
         title: 'Journey in Progress',
-        content:
-            'Distance: ${distanceKm.value.toStringAsFixed(2)} km | Time: $formattedDuration',
+        content: 'Distance: ${distanceKm.value.toStringAsFixed(2)} km | Time: $formattedDuration',
       );
     }
   }
 
-  double _calculateDistance(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     const R = 6371.0; // Earth radius in km
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
 
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(_toRadians(lat1)) *
-            cos(_toRadians(lat2)) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
+    final a = sin(dLat / 2) * sin(dLat / 2) + cos(_toRadians(lat1)) * cos(_toRadians(lat2)) * sin(dLon / 2) * sin(dLon / 2);
 
     final c = 2 * asin(sqrt(a));
     return R * c;
@@ -401,5 +365,15 @@ class JourneyTrackingController extends GetxController
 
   void toggleMap() {
     showMap.value = !showMap.value;
+  }
+
+  /// Called when user starts dragging the map.
+  /// Sets dragging mode and starts a 5-second timer to snap back.
+  void onMapDragStart() {
+    isMapDragging.value = true;
+    _mapSnapBackTimer?.cancel();
+    _mapSnapBackTimer = Timer(const Duration(seconds: 5), () {
+      isMapDragging.value = false;
+    });
   }
 }

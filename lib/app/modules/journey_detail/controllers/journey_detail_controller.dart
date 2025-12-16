@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../data/models/journey.dart';
+import '../../../data/models/journey_category.dart';
 import '../../../data/models/location_point.dart';
 import '../../../data/repositories/journey_repository.dart';
 import '../../../data/repositories/analytics_repository.dart';
@@ -189,6 +190,104 @@ class JourneyDetailController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to update title');
+    }
+  }
+
+  /// Updates the category of the journey
+  Future<void> updateCategory(JourneyCategory newCategory) async {
+    final j = journey.value;
+    if (j == null) return;
+
+    try {
+      // Update in database
+      await _journeyRepo.updateJourneyCategory(j.id, newCategory.name);
+
+      // Update local journey object
+      journey.value = Journey(
+        id: j.id,
+        startTime: j.startTime,
+        endTime: j.endTime,
+        totalDistance: j.totalDistance,
+        averageSpeed: j.averageSpeed,
+        weatherCondition: j.weatherCondition,
+        temperature: j.temperature,
+        title: j.title,
+        category: newCategory,
+        tags: j.tags,
+        isSynced: j.isSynced,
+        createdAt: j.createdAt,
+      );
+
+      Get.snackbar(
+        'Category Updated',
+        'Journey category changed to ${newCategory.displayName}',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to update category');
+    }
+  }
+
+  /// Adds a tag to the journey
+  Future<void> addTag(String tag) async {
+    final j = journey.value;
+    if (j == null) return;
+
+    final trimmedTag = tag.trim();
+    if (trimmedTag.isEmpty) return;
+    if (j.tags.contains(trimmedTag)) return;
+
+    try {
+      final updatedTags = [...j.tags, trimmedTag];
+      await _journeyRepo.updateJourneyTags(j.id, updatedTags);
+
+      // Update local journey object
+      journey.value = Journey(
+        id: j.id,
+        startTime: j.startTime,
+        endTime: j.endTime,
+        totalDistance: j.totalDistance,
+        averageSpeed: j.averageSpeed,
+        weatherCondition: j.weatherCondition,
+        temperature: j.temperature,
+        title: j.title,
+        category: j.category,
+        tags: updatedTags,
+        isSynced: j.isSynced,
+        createdAt: j.createdAt,
+      );
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add tag');
+    }
+  }
+
+  /// Removes a tag from the journey
+  Future<void> removeTag(String tag) async {
+    final j = journey.value;
+    if (j == null) return;
+
+    try {
+      final updatedTags = j.tags.where((t) => t != tag).toList();
+      await _journeyRepo.updateJourneyTags(j.id, updatedTags);
+
+      // Update local journey object
+      journey.value = Journey(
+        id: j.id,
+        startTime: j.startTime,
+        endTime: j.endTime,
+        totalDistance: j.totalDistance,
+        averageSpeed: j.averageSpeed,
+        weatherCondition: j.weatherCondition,
+        temperature: j.temperature,
+        title: j.title,
+        category: j.category,
+        tags: updatedTags,
+        isSynced: j.isSynced,
+        createdAt: j.createdAt,
+      );
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to remove tag');
     }
   }
 }

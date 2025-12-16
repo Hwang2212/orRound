@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
+import '../../../data/models/journey_category.dart';
 import '../../../utils/journey_title_generator.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -20,6 +21,9 @@ class HomeView extends GetView<HomeController> {
               // Weather
               SliverToBoxAdapter(child: _buildWeatherCard(context)),
 
+              // Streak
+              SliverToBoxAdapter(child: _buildStreakCard(context)),
+
               // Recent Journeys Title
               SliverToBoxAdapter(
                 child: Padding(
@@ -28,21 +32,25 @@ class HomeView extends GetView<HomeController> {
                 ),
               ),
 
+              // Category Filter
+              SliverToBoxAdapter(child: _buildCategoryFilter(context)),
+
               // Journey List
               Obx(() {
                 if (controller.isLoadingJourneys.value) {
                   return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
                 }
 
-                if (controller.recentJourneys.isEmpty) {
+                final journeys = controller.filteredJourneys;
+                if (journeys.isEmpty) {
                   return SliverFillRemaining(child: _buildEmptyState(context));
                 }
 
                 return SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    final journey = controller.recentJourneys[index];
+                    final journey = journeys[index];
                     return _buildJourneyCard(context, journey);
-                  }, childCount: controller.recentJourneys.length),
+                  }, childCount: journeys.length),
                 );
               }),
             ],
@@ -102,6 +110,50 @@ class HomeView extends GetView<HomeController> {
     });
   }
 
+  Widget _buildCategoryFilter(BuildContext context) {
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              // All filter
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: const Text('All'),
+                  selected: controller.selectedCategoryFilter.value == null,
+                  onSelected: (selected) {
+                    if (selected) {
+                      controller.selectedCategoryFilter.value = null;
+                    }
+                  },
+                ),
+              ),
+
+              // Category filters
+              ...JourneyCategory.values.map((category) {
+                final isSelected = controller.selectedCategoryFilter.value == category;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    avatar: Icon(category.icon, size: 16),
+                    label: Text(category.displayName),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      controller.selectedCategoryFilter.value = selected ? category : null;
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWeatherCard(BuildContext context) {
     return Obx(() {
       if (controller.weatherDisplay.isEmpty) return const SizedBox.shrink();
@@ -120,6 +172,47 @@ class HomeView extends GetView<HomeController> {
             const SizedBox(width: 12),
             Text(controller.weatherDisplay, style: Theme.of(context).textTheme.bodyLarge),
           ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildStreakCard(BuildContext context) {
+    return Obx(() {
+      final streak = controller.currentStreak.value;
+      if (streak == 0) return const SizedBox.shrink();
+
+      return GestureDetector(
+        onTap: controller.navigateToAchievements,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withOpacity(0.7)]),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.local_fire_department, size: 32, color: Theme.of(context).colorScheme.onPrimary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$streak ${streak == 1 ? 'day' : 'days'} streak',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Keep it going!',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9)),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onPrimary),
+            ],
+          ),
         ),
       );
     });
@@ -144,7 +237,13 @@ class HomeView extends GetView<HomeController> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(child: Text(displayTitle, style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  Row(
+                    children: [
+                      Icon(journey.category.icon, size: 20, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(displayTitle, style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                   const SizedBox(width: 8),
                   Text(journey.formattedDuration, style: Theme.of(context).textTheme.bodyMedium),
                 ],

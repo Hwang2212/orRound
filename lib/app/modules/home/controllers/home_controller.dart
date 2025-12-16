@@ -1,11 +1,13 @@
 import 'package:get/get.dart';
 import '../../../data/models/journey.dart';
+import '../../../data/models/journey_category.dart';
 import '../../../data/models/user_profile.dart';
 import '../../../data/models/weather_data.dart';
 import '../../../data/repositories/journey_repository.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../../data/repositories/weather_repository.dart';
 import '../../../data/repositories/analytics_repository.dart';
+import '../../../data/repositories/achievement_repository.dart';
 import '../../../data/providers/location_provider.dart';
 import '../../routes/routes.dart';
 
@@ -14,6 +16,7 @@ class HomeController extends GetxController {
   final UserRepository _userRepo = UserRepository();
   final WeatherRepository _weatherRepo = WeatherRepository();
   final AnalyticsRepository _analyticsRepo = AnalyticsRepository();
+  final AchievementRepository _achievementRepo = AchievementRepository();
   final LocationProvider _locationProvider = LocationProvider();
 
   final Rx<UserProfile?> userProfile = Rx<UserProfile?>(null);
@@ -22,6 +25,15 @@ class HomeController extends GetxController {
   final RxBool isLoadingJourneys = false.obs;
   final RxBool isLoadingWeather = false.obs;
   final RxInt totalJourneysCount = 0.obs;
+  final RxInt currentStreak = 0.obs;
+  final Rxn<JourneyCategory> selectedCategoryFilter = Rxn<JourneyCategory>(null);
+
+  List<Journey> get filteredJourneys {
+    if (selectedCategoryFilter.value == null) {
+      return recentJourneys;
+    }
+    return recentJourneys.where((j) => j.category == selectedCategoryFilter.value).toList();
+  }
 
   @override
   void onInit() {
@@ -33,7 +45,16 @@ class HomeController extends GetxController {
     await _loadUserProfile();
     await _loadRecentJourneys();
     await _loadWeather();
+    await _loadStreak();
     await _analyticsRepo.logAppLaunched();
+  }
+
+  Future<void> _loadStreak() async {
+    try {
+      currentStreak.value = await _achievementRepo.getCurrentStreak();
+    } catch (e) {
+      currentStreak.value = 0;
+    }
   }
 
   Future<void> _loadUserProfile() async {
@@ -59,10 +80,7 @@ class HomeController extends GetxController {
         await _analyticsRepo.setTotalJourneysCount(totalJourneysCount.value);
       }
     } catch (e) {
-      await _analyticsRepo.logDatabaseError(
-        operationType: 'load_journeys',
-        errorMessage: e.toString(),
-      );
+      await _analyticsRepo.logDatabaseError(operationType: 'load_journeys', errorMessage: e.toString());
       Get.snackbar('Error', 'Failed to load journeys');
     } finally {
       isLoadingJourneys.value = false;
@@ -73,29 +91,17 @@ class HomeController extends GetxController {
     isLoadingWeather.value = true;
     try {
       final location = await _locationProvider.getCurrentLocation();
-      if (location != null &&
-          location.latitude != null &&
-          location.longitude != null) {
-        final weather = await _weatherRepo.getCurrentWeather(
-          location.latitude!,
-          location.longitude!,
-        );
+      if (location != null && location.latitude != null && location.longitude != null) {
+        final weather = await _weatherRepo.getCurrentWeather(location.latitude!, location.longitude!);
 
         if (weather != null) {
           currentWeather.value = weather;
-          await _analyticsRepo.logWeatherFetched(
-            temperature: weather.temperature,
-            condition: weather.condition,
-            fetchContext: 'home_page',
-          );
+          await _analyticsRepo.logWeatherFetched(temperature: weather.temperature, condition: weather.condition, fetchContext: 'home_page');
         }
       }
     } catch (e) {
       print('Weather load error: $e');
-      await _analyticsRepo.logApiError(
-        apiName: 'open_meteo',
-        errorType: e.toString(),
-      );
+      await _analyticsRepo.logApiError(apiName: 'open_meteo', errorType: e.toString());
     } finally {
       isLoadingWeather.value = false;
     }
@@ -111,17 +117,18 @@ class HomeController extends GetxController {
   }
 
   void navigateToJourneyDetail(Journey journey) {
-    final ageDays =
-        DateTime.now()
-            .difference(DateTime.fromMillisecondsSinceEpoch(journey.startTime))
-            .inDays;
+    final ageDays = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(journey.startTime)).inDays;
 
     _analyticsRepo.logJourneyViewed(journeyAgeDays: ageDays);
     Get.toNamed(Routes.JOURNEY_DETAIL, arguments: journey.id);
   }
 
+  void navigateToAchievements() {
+    Get.toNamed(Routes.ACHIEVEMENTS);
+  }
+
   Future<void> refreshData() async {
-    await Future.wait([_loadRecentJourneys(), _loadWeather()]);
+    await Future.wait([_loadRecentJourneys(), _loadWeather(), _loadStreak()]);
   }
 
   String get welcomeMessage {

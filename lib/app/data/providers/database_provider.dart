@@ -19,7 +19,7 @@ class DatabaseProvider {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'orround.db');
 
-    return await openDatabase(path, version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade, onConfigure: _onConfigure);
+    return await openDatabase(path, version: 4, onCreate: _onCreate, onUpgrade: _onUpgrade, onConfigure: _onConfigure);
   }
 
   Future<void> _onConfigure(Database db) async {
@@ -38,6 +38,8 @@ class DatabaseProvider {
         weather_condition TEXT,
         temperature REAL,
         title TEXT,
+        category TEXT DEFAULT 'other',
+        tags TEXT DEFAULT '',
         is_synced INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL
       )
@@ -81,6 +83,15 @@ class DatabaseProvider {
       )
     ''');
 
+    // Achievements table
+    await db.execute('''
+      CREATE TABLE achievements (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        unlocked_at INTEGER NOT NULL
+      )
+    ''');
+
     // Create indexes
     await db.execute('CREATE INDEX idx_journey_id ON location_points(journey_id)');
     await db.execute('CREATE INDEX idx_timestamp ON location_points(timestamp)');
@@ -91,6 +102,23 @@ class DatabaseProvider {
     if (oldVersion < 2) {
       // Add title column to journeys table
       await db.execute('ALTER TABLE journeys ADD COLUMN title TEXT');
+    }
+
+    if (oldVersion < 3) {
+      // Add category and tags columns to journeys table
+      await db.execute("ALTER TABLE journeys ADD COLUMN category TEXT DEFAULT 'other'");
+      await db.execute("ALTER TABLE journeys ADD COLUMN tags TEXT DEFAULT ''");
+    }
+
+    if (oldVersion < 4) {
+      // Add achievements table
+      await db.execute('''
+        CREATE TABLE achievements (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          unlocked_at INTEGER NOT NULL
+        )
+      ''');
     }
   }
 
