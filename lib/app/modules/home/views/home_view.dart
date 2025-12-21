@@ -18,6 +18,9 @@ class HomeView extends GetView<HomeController> {
               // Header
               SliverToBoxAdapter(child: _buildHeader(context)),
 
+              // Quick Stats
+              SliverToBoxAdapter(child: _buildQuickStats(context)),
+
               // Weather
               SliverToBoxAdapter(child: _buildWeatherCard(context)),
 
@@ -105,6 +108,90 @@ class HomeView extends GetView<HomeController> {
             ),
             IconButton(icon: const Icon(Icons.person_outline), onPressed: controller.navigateToProfile),
           ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildQuickStats(BuildContext context) {
+    return Obx(() {
+      if (controller.totalJourneysCount.value == 0) {
+        return const SizedBox.shrink();
+      }
+
+      return GestureDetector(
+        onTap: () => Get.toNamed('/statistics'),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5), borderRadius: BorderRadius.circular(12)),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.bar_chart, size: 16, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Your Stats',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                controller.formattedTotalDistance,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                              ),
+                              Text(
+                                'Distance',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                controller.formattedTotalDuration,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                              ),
+                              Text(
+                                'Time',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onPrimaryContainer),
+            ],
+          ),
         ),
       );
     });

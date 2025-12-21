@@ -51,14 +51,6 @@ class JourneyRepository {
     return (result.first['count'] as int?) ?? 0;
   }
 
-  /// Gets the total distance traveled across all journeys
-  Future<double> getTotalDistance() async {
-    final db = await _dbProvider.database;
-    final result = await db.rawQuery('SELECT SUM(total_distance) as total FROM journeys');
-    final total = result.first['total'];
-    return (total as num?)?.toDouble() ?? 0.0;
-  }
-
   Future<void> saveLocationPoint(LocationPoint point) async {
     final db = await _dbProvider.database;
     await db.insert('location_points', point.toMap());
@@ -102,4 +94,131 @@ class JourneyRepository {
 
   String generateJourneyId() => _uuid.v4();
   String generatePointId() => _uuid.v4();
+
+  // Statistics & Aggregate Queries
+
+  /// Gets the total distance traveled within the specified date range
+  Future<double> getTotalDistance({DateTime? from, DateTime? to}) async {
+    final db = await _dbProvider.database;
+
+    String query = 'SELECT SUM(total_distance) as total FROM journeys';
+    List<dynamic> whereArgs = [];
+
+    if (from != null || to != null) {
+      query += ' WHERE';
+      if (from != null) {
+        query += ' start_time >= ?';
+        whereArgs.add(from.millisecondsSinceEpoch);
+      }
+      if (to != null) {
+        if (from != null) query += ' AND';
+        query += ' start_time <= ?';
+        whereArgs.add(to.millisecondsSinceEpoch);
+      }
+    }
+
+    final result = await db.rawQuery(query, whereArgs.isEmpty ? null : whereArgs);
+    final total = result.first['total'];
+    return (total as num?)?.toDouble() ?? 0.0;
+  }
+
+  /// Gets the total number of journeys within the specified date range
+  Future<int> getTotalJourneys({DateTime? from, DateTime? to}) async {
+    final db = await _dbProvider.database;
+
+    String query = 'SELECT COUNT(*) as count FROM journeys';
+    List<dynamic> whereArgs = [];
+
+    if (from != null || to != null) {
+      query += ' WHERE';
+      if (from != null) {
+        query += ' start_time >= ?';
+        whereArgs.add(from.millisecondsSinceEpoch);
+      }
+      if (to != null) {
+        if (from != null) query += ' AND';
+        query += ' start_time <= ?';
+        whereArgs.add(to.millisecondsSinceEpoch);
+      }
+    }
+
+    final result = await db.rawQuery(query, whereArgs.isEmpty ? null : whereArgs);
+    return (result.first['count'] as int?) ?? 0;
+  }
+
+  /// Gets the total duration (in seconds) within the specified date range
+  Future<int> getTotalDuration({DateTime? from, DateTime? to}) async {
+    final db = await _dbProvider.database;
+
+    String query = 'SELECT SUM(duration) as total FROM journeys';
+    List<dynamic> whereArgs = [];
+
+    if (from != null || to != null) {
+      query += ' WHERE';
+      if (from != null) {
+        query += ' start_time >= ?';
+        whereArgs.add(from.millisecondsSinceEpoch);
+      }
+      if (to != null) {
+        if (from != null) query += ' AND';
+        query += ' start_time <= ?';
+        whereArgs.add(to.millisecondsSinceEpoch);
+      }
+    }
+
+    final result = await db.rawQuery(query, whereArgs.isEmpty ? null : whereArgs);
+    final total = result.first['total'];
+    return (total as int?) ?? 0;
+  }
+
+  /// Gets the longest journey by distance
+  Future<Journey?> getLongestJourney() async {
+    final db = await _dbProvider.database;
+    final maps = await db.query('journeys', orderBy: 'total_distance DESC', limit: 1);
+
+    if (maps.isEmpty) return null;
+    return Journey.fromMap(maps.first);
+  }
+
+  /// Gets the fastest journey by average speed
+  Future<Journey?> getFastestJourney() async {
+    final db = await _dbProvider.database;
+    final maps = await db.query('journeys', orderBy: 'average_speed DESC', limit: 1);
+
+    if (maps.isEmpty) return null;
+    return Journey.fromMap(maps.first);
+  }
+
+  /// Gets daily distances for the last N days for chart display
+  Future<Map<DateTime, double>> getDailyDistances(int days) async {
+    final db = await _dbProvider.database;
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    final startMillis = startDate.millisecondsSinceEpoch;
+
+    final result = await db.rawQuery(
+      '''
+      SELECT 
+        DATE(start_time / 1000, 'unixepoch') as date,
+        SUM(total_distance) as distance
+      FROM journeys
+      WHERE start_time >= ?
+      GROUP BY date
+      ORDER BY date ASC
+    ''',
+      [startMillis],
+    );
+
+    final Map<DateTime, double> dailyDistances = {};
+
+    for (final row in result) {
+      final dateString = row['date'] as String;
+      final parts = dateString.split('-');
+      final date = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+      final distance = (row['distance'] as num?)?.toDouble() ?? 0.0;
+      dailyDistances[date] = distance;
+    }
+
+    return dailyDistances;
+  }
 }

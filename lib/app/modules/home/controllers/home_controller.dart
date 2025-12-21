@@ -27,12 +27,31 @@ class HomeController extends GetxController {
   final RxInt totalJourneysCount = 0.obs;
   final RxInt currentStreak = 0.obs;
   final Rxn<JourneyCategory> selectedCategoryFilter = Rxn<JourneyCategory>(null);
+  final RxDouble totalDistance = 0.0.obs;
+  final RxInt totalDuration = 0.obs;
 
   List<Journey> get filteredJourneys {
     if (selectedCategoryFilter.value == null) {
       return recentJourneys;
     }
     return recentJourneys.where((j) => j.category == selectedCategoryFilter.value).toList();
+  }
+
+  String get formattedTotalDistance {
+    if (totalDistance.value >= 1000) {
+      return '${(totalDistance.value / 1000).toStringAsFixed(1)} km';
+    }
+    return '${totalDistance.value.toStringAsFixed(0)} m';
+  }
+
+  String get formattedTotalDuration {
+    final hours = totalDuration.value ~/ 3600;
+    final minutes = (totalDuration.value % 3600) ~/ 60;
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
   }
 
   @override
@@ -44,9 +63,19 @@ class HomeController extends GetxController {
   Future<void> _initializeHome() async {
     await _loadUserProfile();
     await _loadRecentJourneys();
+    await _loadQuickStats();
     await _loadWeather();
     await _loadStreak();
     await _analyticsRepo.logAppLaunched();
+  }
+
+  Future<void> _loadQuickStats() async {
+    try {
+      totalDistance.value = await _journeyRepo.getTotalDistance();
+      totalDuration.value = await _journeyRepo.getTotalDuration();
+    } catch (e) {
+      print('Error loading quick stats: $e');
+    }
   }
 
   Future<void> _loadStreak() async {

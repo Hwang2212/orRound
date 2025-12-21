@@ -14,6 +14,8 @@ import '../modules/referral/views/enter_referral_view.dart';
 import '../modules/referral/bindings/referral_binding.dart';
 import '../modules/achievements/views/achievements_view.dart';
 import '../modules/achievements/bindings/achievements_binding.dart';
+import '../modules/statistics/views/statistics_view.dart';
+import '../modules/statistics/bindings/statistics_binding.dart';
 
 class AppPages {
   static final routes = [
@@ -25,5 +27,6 @@ class AppPages {
     GetPage(name: Routes.MY_REFERRAL, page: () => const MyReferralView(), binding: ReferralBinding()),
     GetPage(name: Routes.ENTER_REFERRAL, page: () => const EnterReferralView(), binding: ReferralBinding()),
     GetPage(name: Routes.ACHIEVEMENTS, page: () => const AchievementsView(), binding: AchievementsBinding()),
+    GetPage(name: Routes.STATISTICS, page: () => const StatisticsView(), binding: StatisticsBinding()),
   ];
 }

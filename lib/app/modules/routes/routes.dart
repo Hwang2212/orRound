@@ -7,4 +7,5 @@ abstract class Routes {
   static const MY_REFERRAL = '/my-referral';
   static const ENTER_REFERRAL = '/enter-referral';
   static const ACHIEVEMENTS = '/achievements';
+  static const STATISTICS = '/statistics';
 }
